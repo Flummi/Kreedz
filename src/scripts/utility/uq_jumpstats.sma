@@ -257,7 +257,7 @@ public plugin_init()
 	kz_failstats_blue       = register_cvar("kz_uq_failstats_blue",       "109");
 	
 	kz_sounds 	     = register_cvar("kz_uq_sounds",           "1");
-	kz_top_rank_by        = register_cvar("kz_uq_top_by",        "1");		// How ranking will work? 0=name, 1=ip 2=steam
+	kz_top_rank_by        = register_cvar("kz_uq_top_by",        "2");		// How ranking will work? 0=name, 1=ip 2=steam
 	kz_legal_settings     = register_cvar("kz_uq_legal_settings",     "1");
 	kz_prefix 	       = register_cvar("kz_uq_prefix",       "unique-kz");
 	
@@ -1304,14 +1304,17 @@ public client_putinserver(id)
 	{
 		set_task(0.1, "DoSpeed", id+212299, "", 0, "b", 0);
 	}
-	
+
 	get_user_name(id, g_playername[id], 63);
 	get_user_ip(id, g_playerip[id], 15, 1);
 	get_user_authid(id, g_playersteam[id], 35);
 
 	if(kz_sql == 1)
 	{
-		player_load_info(id);
+		if(!is_user_bot(id) && !is_user_hltv(id))
+		{
+			player_load_info(id);
+		}
 	}
 	
 	if(is_user_admin(id))
