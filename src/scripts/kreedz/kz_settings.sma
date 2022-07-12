@@ -4,6 +4,7 @@
 #include <kreedz_api>
 #include <kreedz_util>
 #include <settings_api>
+#include <airaccelerate>
 
 #define PLUGIN 			"[KZ] Settings"
 #define VERSION 		__DATE__
@@ -24,6 +25,7 @@ enum OptionsEnum {
     optBoolShowMenu,
     optBoolAllowGoto,
     optIntMkeyBehavior,
+    optIntAiraccelerate,
     optIntJumpStats,
     optBoolSpecList,
 };
@@ -44,6 +46,7 @@ enum UserDataStruct {
     bool:ud_showMenu,
     bool:ud_allowGoto,
     bool:ud_specList,
+    ud_airaccelerate,
 
     ud_mkeyBehavior,
     ud_jumpStats,
@@ -143,6 +146,11 @@ public plugin_precache() {
     // 
     // default: true
     g_Options[optBoolSpecList] = register_players_option_cell("spec_list", FIELD_TYPE_BOOL, true);
+
+    // airaccelerate
+    //
+    // default: 10(aa)
+    g_Options[optIntAiraccelerate] = register_players_option_cell("airaccelerate", FIELD_TYPE_INT, get_pcvar_num(get_cvar_pointer("sv_airaccelerate")));
 }
 
 public client_putinserver(id) {
@@ -161,6 +169,7 @@ public client_putinserver(id) {
 
     g_UserData[id][ud_mkeyBehavior] = 0;
     g_UserData[id][ud_jumpStats] = DEFAULT_JUMP_STATS;
+    g_UserData[id][ud_airaccelerate] = get_pcvar_num(get_cvar_pointer("sv_airaccelerate"));
 
     remove_task(TASK_USER_INITIALIZED + id)
     set_task(5.0, "taskInitialized", TASK_USER_INITIALIZED + id);
@@ -215,6 +224,18 @@ public OnCellValueChanged(id, optionId, newValue) {
     else if (optionId == g_Options[optBoolSpecList]) {
         g_UserData[id][ud_specList] = !!newValue;
     }
+    else if (optionId == g_Options[optIntAiraccelerate]) {
+        client_print_color(id, print_team_default, "^4[KZ] ^1AirAccelerate: %d -> %d", get_user_airaccelerate(id), newValue);
+
+        g_UserData[id][ud_airaccelerate] = newValue;
+
+        if ((kz_get_timer_state(id) == TIMER_ENABLED || kz_get_timer_state(id) == TIMER_PAUSED) && get_user_airaccelerate(id) != newValue) {
+            kz_stop_timer(id);
+            client_print_color(id, print_team_default, "^4[KZ] ^1Timer resetted.");
+        }
+
+        set_user_airaccelerate(id, newValue);
+    }
 }
 
 public cmdSettings(id) {
@@ -267,8 +288,11 @@ stock settingsMenu(id, page = 0) {
         case 0: formatex(szMsg, charsmax(szMsg), "%L", id, "SETTINGSMENU_OPT_MKEY_OPEN_MENU");
         case 1: formatex(szMsg, charsmax(szMsg), "%L", id, "SETTINGSMENU_OPT_MKEY_SPEC_CT");
     }
-    
     menu_additem(iMenu, szMsg);
+
+    formatex(szMsg, charsmax(szMsg), "AirAccelerate: \y%daa", g_UserData[id][ud_airaccelerate]);
+    menu_additem(iMenu, szMsg);
+
 
     formatex(szMsg, charsmax(szMsg), "%L", id, "BACK");
     menu_setprop(iMenu, MPROP_BACKNAME, szMsg);
@@ -337,6 +361,10 @@ stock settingsMenu(id, page = 0) {
         case 10: {
             g_UserData[id][ud_mkeyBehavior] = (g_UserData[id][ud_mkeyBehavior] + 1) % 2;
             set_option_cell(id, g_Options[optIntMkeyBehavior], g_UserData[id][ud_mkeyBehavior]);
+        }
+        case 11: {
+            g_UserData[id][ud_airaccelerate] = g_UserData[id][ud_airaccelerate] == 10 ? 100 : 10;
+            set_option_cell(id, g_Options[optIntAiraccelerate], g_UserData[id][ud_airaccelerate]);
         }
     }
 

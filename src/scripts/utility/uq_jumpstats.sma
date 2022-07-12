@@ -16,10 +16,11 @@
 #include <engine>
 #include <cstrike>
 #include <hamsandwich>
-#include <uq_jumpstats_const.inc>
-#include <uq_jumpstats_stocks.inc>
+#include <uq_jumpstats_const>
+#include <uq_jumpstats_stocks>
 #include <celltrie>
 // #include <dhudmessage>
+#include <airaccelerate>
 #include <kreedz_api>
 #include <settings_api>
 
@@ -61,7 +62,7 @@ new strafe_stat_sync[33][NSTRAFES][2],strLen,strMess[40*NSTRAFES],strMessBuf[40*
 
 new bool:g_pBot[33],strL,strM[40*NSTRAFES],strMBuf[40*NSTRAFES],Float:firstvel[33],Float:secvel[33],Float:firstorig[33][3],Float:secorig[33][3];
 new Float:speed[33], Float:TempSpeed[33],Float:statsduckspeed[33][500]; 
-new bool:slidim[33],Float:slidedist[33],edgefriction,mp_footsteps,sv_cheats,sv_airaccelerate,sv_maxspeed,sv_stepsize,sv_maxvelocity,sv_gravity;
+new bool:slidim[33],Float:slidedist[33],edgefriction,mp_footsteps,sv_cheats,sv_maxspeed,sv_stepsize,sv_maxvelocity,sv_gravity;
 
 new kz_min_dcj,kz_stats_x,kz_stats_y,Float:stats_x,Float:stats_y,taskslide[33],taskslide1[33],bool:failslide[33];
 new Float:failslidez[33],kz_strafe_x,kz_strafe_y,Float:strafe_x,Float:strafe_y,Float:laddist[33],kz_duck_x;
@@ -144,6 +145,7 @@ new sql_Cvars[SQLCVARSNUM][] = { //cvars for db
 };
 
 new Trie:JumpPlayers;
+new Trie:JumpPlayers_100aa;
 
 new const KZ_CVARSDIR[] = "config.cfg";
 
@@ -153,7 +155,6 @@ enum OptionsEnum {
 
 new g_Options[OptionsEnum];
 new g_OptionFlags[MAX_PLAYERS + 1];
-
 
 public plugin_init()
 {
@@ -259,7 +260,6 @@ public plugin_init()
 	kz_top_rank_by        = register_cvar("kz_uq_top_by",        "1");		// How ranking will work? 0=name, 1=ip 2=steam
 	kz_legal_settings     = register_cvar("kz_uq_legal_settings",     "1");
 	kz_prefix 	       = register_cvar("kz_uq_prefix",       "unique-kz");
-	bind_pcvar_num(register_cvar("kz_uq_airaccelerate", "10"), kz_airaccelerate);
 	
 	kz_stats_x        = register_cvar("kz_uq_stats_x",        "-1.0");		
 	kz_stats_y      = register_cvar("kz_uq_stats_y",      "0.70");
@@ -329,7 +329,7 @@ public plugin_init()
 	max_strafes = register_cvar("kz_uq_max_strafes", "14");
 	screenshoot = register_cvar("kz_uq_screenshoot", "0");
 	
-	sql_stats = register_cvar("kz_uq_sql", "0");
+	sql_stats = register_cvar("kz_uq_sql", "1");
 	web_stats = register_cvar("kz_uq_web", "0");
 	
 	uq_host = register_cvar("kz_uq_host", "127.0.0.1");
@@ -436,7 +436,6 @@ public plugin_init()
 	mp_footsteps          = get_cvar_pointer("mp_footsteps");
 	sv_cheats             = get_cvar_pointer("sv_cheats");
 	sv_gravity            = get_cvar_pointer("sv_gravity");
-	sv_airaccelerate      = get_cvar_pointer("sv_airaccelerate");
 	sv_maxspeed           = get_cvar_pointer("sv_maxspeed");
 	sv_stepsize           = get_cvar_pointer("sv_stepsize");
 	sv_maxvelocity        = get_cvar_pointer("sv_maxvelocity");
@@ -661,7 +660,6 @@ public plugin_cfg()
 	//uq_mp_footsteps=get_pcvar_num(mp_footsteps);
 	//uq_sv_cheats=get_pcvar_num(sv_cheats);
 	//uq_sv_gravity=get_pcvar_num(sv_gravity);
-	//uq_sv_airaccelerate=get_pcvar_num(sv_airaccelerate);
 	//uq_sv_maxspeed=get_pcvar_num(sv_maxspeed);
 	//uq_sv_stepsize=get_pcvar_num(sv_stepsize);
 	//uq_sv_maxvelocity=get_pcvar_num(sv_maxvelocity);
@@ -695,18 +693,6 @@ public plugin_cfg()
 		set_cvar_string("mp_footsteps", "1");
 		set_cvar_string("sv_cheats", "0");
 		set_cvar_string("sv_gravity", "800");
-		
-		if(kz_airaccelerate==0 || kz_airaccelerate==10)
-			set_cvar_string("sv_airaccelerate", "10");
-		else if(kz_airaccelerate==1 || kz_airaccelerate==100)
-			set_cvar_string("sv_airaccelerate", "100");
-		else 
-		{
-			new str[10];
-			num_to_str(kz_airaccelerate,str,9);
-			set_cvar_string("sv_airaccelerate", str);
-		}
-		
 		set_cvar_string("sv_maxspeed", "320");
 		set_cvar_string("sv_stepsize", "18");
 		set_cvar_string("sv_maxvelocity", "2000");
@@ -718,12 +704,13 @@ public plugin_cfg()
 		
 	if( !dir_exists(ljsDir) )
 		mkdir(ljsDir);
-			
+	
 	if(kz_sql==1)
 	{
 		set_task(0.2, "stats_sql");
 		set_task(1.0, "save_info_sql");
 		JumpPlayers = TrieCreate();
+		JumpPlayers_100aa = TrieCreate();
 	}
 	else if(kz_sql==0)
 	{
@@ -773,7 +760,7 @@ public Wrong_ver()
 	set_task(5.0,"Wrong_ver");
 }
 
-#include <uq_jumpstats_sql.inc>
+#include <uq_jumpstats_sql>
 
 public plugin_precache()
 {
@@ -960,11 +947,7 @@ stock kz_make_cvarexec(const config[])
 	fprintf(f, "// The prefix for all messages in chat^n"); 
 	fprintf(f, "kz_uq_prefix ^"%s^"^n", stringscvars);
 	fprintf(f, "^n");
-	
-	fprintf(f, "// How to set up a server by value sv_airaccelerate (Varible=xx, but var=0 reserved for 10aa, var=1 for 100aa)^n");
-	fprintf(f, "kz_uq_airaccelerate %i^n",kz_airaccelerate);
-	fprintf(f, "^n");
-	
+
 	fprintf(f, "// On/Off Showing stats with noslowdown^n");
 	fprintf(f, "kz_uq_noslowdown %i^n",uq_noslow);
 	fprintf(f, "^n");
@@ -1304,14 +1287,7 @@ public server_frame()
 		
 		if( get_pcvar_num(sv_gravity)!= 800 )
 			set_pcvar_num(sv_gravity, 800);
-		
-		if((kz_airaccelerate==0 || kz_airaccelerate==10) && get_pcvar_num(sv_airaccelerate) != 10 )
-			set_pcvar_num(sv_airaccelerate, 10);
-		else if((kz_airaccelerate==1 || kz_airaccelerate==100) && get_pcvar_num(sv_airaccelerate) != 100 )
-			set_pcvar_num(sv_airaccelerate, 100);
-		else if(get_pcvar_num(sv_airaccelerate) != kz_airaccelerate && kz_airaccelerate!=0 && kz_airaccelerate!=1)
-			set_pcvar_num(sv_airaccelerate, kz_airaccelerate);
-		
+
 		if( get_pcvar_num(sv_maxspeed) != 320 )
 			set_pcvar_num(sv_maxspeed, 320);
 		
@@ -2243,14 +2219,10 @@ public fwdPreThink( id )
 						}
 					}
 				}
-				new airace,aircj;
+				new aircj;
+				kz_airaccelerate = get_user_airaccelerate(id);
 				if(kz_airaccelerate<=10 && kz_airaccelerate!=1)
 				{
-					if(kz_airaccelerate==0)
-						airace=10;
-					else
-						airace=kz_airaccelerate;
-						
 					aircj=0;
 					formatex(airacel[id],32,"");
 				}
@@ -2258,12 +2230,10 @@ public fwdPreThink( id )
 				{
 					if(kz_airaccelerate==1)
 					{
-						airace=100;
 						formatex(airacel[id],32,"(100aa)");
 					}
 					else
 					{
-						airace=kz_airaccelerate;
 						formatex(airacel[id],32,"(%daa)",kz_airaccelerate);
 					}
 					aircj=10;
@@ -2290,7 +2260,6 @@ public fwdPreThink( id )
 				if(leg_settings==1 && (get_pcvar_num(edgefriction) != 2 || fGravity != 1.0 || get_pcvar_num(mp_footsteps) != 1
 					|| get_pcvar_num(sv_cheats) != 0
 					|| get_pcvar_num(sv_gravity) != 800
-					|| get_pcvar_num(sv_airaccelerate) != airace
 					|| get_pcvar_num(sv_maxspeed) != 320
 					|| get_pcvar_num(sv_stepsize) != 18
 					|| get_pcvar_num(sv_maxvelocity) != 2000
@@ -6064,29 +6033,27 @@ public fwdPreThink( id )
 											client_cmd(ids, "speak misc/mod_godlike");
 										}
 										if( uq_light ) krasnota(id);
-										Color_Chat_Lang(ids, RED, "%L",LANG_SERVER,"UQSTATS_CCHAT_NORMALA",prefix, g_playername[id], distance[id],Jtype[id],block_str,weapon_name,pre_type[id],airacel[id]);
+										Color_Chat_Lang(ids, RED, "%L",LANG_SERVER,"UQSTATS_CCHAT_NORMALA",prefix, g_playername[id], distance[id], Jtype[id], block_str, weapon_name, pre_type[id], airacel[id], strafe_num[id], sync_[id], prestrafe[id]);
 									}
 									else if ( distance[id] >= leet_dist  ) {
 										if( uq_sounds && enable_sound[id]==true ) client_cmd(id, "speak misc/mod_wickedsick");
 									
 										if( uq_light ) krasnota(id);
-										Color_Chat_Lang(ids, RED, "%L",LANG_SERVER,"UQSTATS_CCHAT_NORMALA",prefix, g_playername[id], distance[id],Jtype[id],block_str,weapon_name,pre_type[id],airacel[id]);
+										Color_Chat_Lang(ids, RED, "%L",LANG_SERVER,"UQSTATS_CCHAT_NORMALA",prefix, g_playername[id], distance[id], Jtype[id], block_str, weapon_name, pre_type[id], airacel[id], strafe_num[id], sync_[id], prestrafe[id]);
 									}
 									else if ( distance[id] >= holy_dist ) {
 										if( uq_sounds && enable_sound[id]==true ) client_cmd(id, "speak misc/holyshit");
 									
 										if( uq_light ) sineva(id);
-										Color_Chat_Lang(ids, BLUE, "%L",LANG_SERVER,"UQSTATS_CCHAT_NORMALA",prefix, g_playername[id], distance[id],Jtype[id],block_str,weapon_name,pre_type[id],airacel[id]);
+										Color_Chat_Lang(ids, BLUE, "%L",LANG_SERVER,"UQSTATS_CCHAT_NORMALA",prefix, g_playername[id], distance[id], Jtype[id], block_str, weapon_name, pre_type[id], airacel[id], strafe_num[id], sync_[id], prestrafe[id]);
 									}
 									else if ( distance[id] >= pro_dist ) {
 										if( uq_sounds && enable_sound[id]==true ) client_cmd(id, "speak misc/perfect");
-									
-										Color_Chat_Lang(ids, GREEN, "%L",LANG_SERVER,"UQSTATS_CCHAT_NORMALB",prefix, g_playername[id], distance[id],Jtype[id],block_str,weapon_name,pre_type[id],airacel[id]);
+										Color_Chat_Lang(ids, GREEN, "%L",LANG_SERVER,"UQSTATS_CCHAT_NORMALB",prefix, g_playername[id], distance[id], Jtype[id], block_str, weapon_name, pre_type[id], airacel[id], strafe_num[id], sync_[id], prestrafe[id]);
 									}
 									else if ( distance[id] >=good_dist ) {
 										if( uq_sounds && enable_sound[id]==true ) client_cmd(id, "speak misc/impressive");
-									
-										Color_Chat_Lang(ids, GREY, "%L",LANG_SERVER,"UQSTATS_CCHAT_NORMALA",prefix, g_playername[id], distance[id],Jtype[id],block_str,weapon_name,pre_type[id],airacel[id]);
+										Color_Chat_Lang(ids, GREY, "%L",LANG_SERVER,"UQSTATS_CCHAT_NORMALA",prefix, g_playername[id], distance[id], Jtype[id], block_str, weapon_name, pre_type[id], airacel[id], strafe_num[id], sync_[id], prestrafe[id]);
 									}
 								}
 								else if(jump_type[id]==Type_Multi_CountJump || (multiscj[id]==2 && jump_type[id]==Type_StandUp_CountJump) || (multidropcj[id]==2 && jump_type[id]==Type_Drop_CountJump))
@@ -6097,29 +6064,29 @@ public fwdPreThink( id )
 											client_cmd(ids, "speak misc/mod_godlike");
 										}
 										if( uq_light ) krasnota(id);
-										Color_Chat_Lang(ids,RED,"%L",LANG_SERVER,"UQSTATS_COLORCHAT_MULTIDUCKA",prefix, g_playername[id], distance[id],Jtype[id],ducks[id],block_str,weapon_name,pre_type[id],airacel[id]);
+										Color_Chat_Lang(ids,RED,"%L",LANG_SERVER,"UQSTATS_COLORCHAT_MULTIDUCKA",prefix, g_playername[id], distance[id],Jtype[id],ducks[id],block_str,weapon_name,pre_type[id],airacel[id], strafe_num[id], sync_[id], prestrafe[id]);
 									}
 									else if ( distance[id] >= leet_dist  ) {
 										if( uq_sounds && enable_sound[id]==true ) client_cmd(id, "speak misc/mod_wickedsick");
 									
 										if( uq_light ) krasnota(id);
-										Color_Chat_Lang(ids,RED,"%L",LANG_SERVER,"UQSTATS_COLORCHAT_MULTIDUCKA",prefix, g_playername[id], distance[id],Jtype[id],ducks[id],block_str,weapon_name,pre_type[id],airacel[id]);
+										Color_Chat_Lang(ids,RED,"%L",LANG_SERVER,"UQSTATS_COLORCHAT_MULTIDUCKA",prefix, g_playername[id], distance[id],Jtype[id],ducks[id],block_str,weapon_name,pre_type[id],airacel[id], strafe_num[id], sync_[id], prestrafe[id]);
 									}
 									else if ( distance[id] >= holy_dist ) {
 										if( uq_sounds && enable_sound[id]==true ) client_cmd(id, "speak misc/holyshit");
 									
 										if( uq_light ) sineva(id);
-										Color_Chat_Lang(ids,BLUE,"%L",LANG_SERVER,"UQSTATS_COLORCHAT_MULTIDUCKA",prefix, g_playername[id], distance[id],Jtype[id],ducks[id],block_str,weapon_name,pre_type[id],airacel[id]);
+										Color_Chat_Lang(ids,BLUE,"%L",LANG_SERVER,"UQSTATS_COLORCHAT_MULTIDUCKA",prefix, g_playername[id], distance[id],Jtype[id],ducks[id],block_str,weapon_name,pre_type[id],airacel[id], strafe_num[id], sync_[id], prestrafe[id]);
 									}
 									else if ( distance[id] >= pro_dist ) {
 										if( uq_sounds && enable_sound[id]==true ) client_cmd(id, "speak misc/perfect");
 									
-										Color_Chat_Lang(ids,GREEN,"%L",LANG_SERVER,"UQSTATS_COLORCHAT_MULTIDUCKB",prefix, g_playername[id], distance[id],Jtype[id],ducks[id],block_str,weapon_name,pre_type[id],airacel[id]);
+										Color_Chat_Lang(ids,GREEN,"%L",LANG_SERVER,"UQSTATS_COLORCHAT_MULTIDUCKB",prefix, g_playername[id], distance[id],Jtype[id],ducks[id],block_str,weapon_name,pre_type[id],airacel[id], strafe_num[id], sync_[id], prestrafe[id]);
 									}
 									else if ( distance[id] >=good_dist ) {
 										if( uq_sounds && enable_sound[id]==true ) client_cmd(id, "speak misc/impressive");
 									
-										Color_Chat_Lang(ids,GREY,"%L",LANG_SERVER,"UQSTATS_COLORCHAT_MULTIDUCKA",prefix, g_playername[id], distance[id],Jtype[id],ducks[id],block_str,weapon_name,pre_type[id],airacel[id]);
+										Color_Chat_Lang(ids,GREY,"%L",LANG_SERVER,"UQSTATS_COLORCHAT_MULTIDUCKA",prefix, g_playername[id], distance[id],Jtype[id],ducks[id],block_str,weapon_name,pre_type[id],airacel[id], strafe_num[id], sync_[id], prestrafe[id]);
 									}
 								}
 							}	
@@ -8886,6 +8853,8 @@ public client_disconnected(id)
 		num_to_str(g_sql_pid[id], tmp_str, 11);
 		if(TrieKeyExists(JumpPlayers, tmp_str))
 			TrieDeleteKey(JumpPlayers, tmp_str);
+		if(TrieKeyExists(JumpPlayers_100aa, tmp_str))
+			TrieDeleteKey(JumpPlayers_100aa, tmp_str);
 	}
 	
 	remove_beam_ent(id);
@@ -9400,6 +9369,7 @@ public plugin_end()
 			SQL_FreeHandle(SqlConnection);
 		
 		TrieDestroy(JumpPlayers);
+		TrieDestroy(JumpPlayers_100aa);
 	}
 	else if(kz_sql == 0)
 	{

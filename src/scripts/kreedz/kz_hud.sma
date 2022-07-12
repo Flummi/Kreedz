@@ -1,6 +1,7 @@
 #include <amxmodx>
 #include <fakemeta>
 #include <reapi>
+#include <airaccelerate>
 
 #include <kreedz_api>
 #include <kreedz_util>
@@ -214,13 +215,13 @@ FormatCheckpointsHud(id, szMsg[], iLen) {
 
 	switch (kz_get_timer_state(id)) {
 		case TIMER_DISABLED: {
-			formatex(szMsg, iLen, "^t^n^n");
+			formatex(szMsg, iLen, "^t^n(%daa)^n", get_user_airaccelerate(id));
 		}
 		case TIMER_ENABLED: {
-			formatex(szMsg, iLen, "[%d cp %d gc]^n^n", numChecks, numTeleports);
+			formatex(szMsg, iLen, "[%d cp %d gc]^n(%daa)^n", numChecks, numTeleports, get_user_airaccelerate(id));
 		}
 		case TIMER_PAUSED: {
-			formatex(szMsg, iLen, "[%d cp %d gc] | PAUSED^n^n", numChecks, numTeleports);
+			formatex(szMsg, iLen, "[%d cp %d gc] | PAUSED^n(%daa)^n", numChecks, numTeleports, get_user_airaccelerate(id));
 		}
 	}
 }

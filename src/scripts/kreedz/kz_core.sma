@@ -10,6 +10,8 @@
 #include <kreedz_util>
 #include <settings_api>
 
+#include <airaccelerate>
+
 #define PLUGIN 	 	"[Kreedz] Core"
 #define VERSION 	__DATE__
 #define AUTHOR	 	"ggv"
@@ -233,6 +235,7 @@ public plugin_natives()
 {
 	register_native("kz_get_timer_state", 	"native_get_timer_state");
 	register_native("kz_start_timer", 		"native_start_timer");
+	register_native("kz_stop_timer", 		"native_stop_timer");
 	register_native("kz_end_timer", 		"native_end_timer");
 	register_native("kz_set_pause", 		"native_set_pause");
 
@@ -263,6 +266,12 @@ public native_start_timer() {
 	new id = get_param(1);
 
 	run_start(id);
+}
+
+public native_stop_timer() {
+	new id = get_param(1);
+
+	cmd_Stop(id);
 }
 
 public native_end_timer() {
@@ -901,7 +910,7 @@ run_finish(id) {
 	runInfo[run_cpCount] = g_UserData[id][ud_ChecksNum];
 	runInfo[run_tpCount] = g_UserData[id][ud_TeleNum];
 	runInfo[run_weapon] = iWeaponRank;
-	runInfo[run_airaccelerate] = 0;
+	runInfo[run_airaccelerate] = get_user_airaccelerate(id) == 10 ? AIR_ACCELERATE_10 : AIR_ACCELERATE_100;
 
 	new iRet;
 	ExecuteForward(g_Forwards[fwd_TimerFinishPre], iRet, id, PrepareArray(runInfo, RunStruct));
