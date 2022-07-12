@@ -19,9 +19,10 @@ KZ_CHAT_REC_PRO = ^4[KZ] ^1Pro record: [^4%s^1] by ^3%s^1.
 KZ_CHAT_REC_NO_DATA = ^4[KZ] ^1Pro record: ^3No data^1.
 
 MAINMENU_TITLE = Menu
-MAINMENU_CP = Checkpoint
-MAINMENU_TP = Teleport
-MAINMENU_PAUSE = Pause / unpause
+MAINMENU_CP = Checkpoint (\y%d\w)
+MAINMENU_TP = Teleport (\y%d\w)
+MAINMENU_PAUSE = Pause
+MAINMENU_UNPAUSE = \rUnpause
 MAINMENU_START = Start
 MAINMENU_NOCLIP = Noclip
 MAINMENU_SPEC = Spec

@@ -1,6 +1,7 @@
 #include <amxmodx>
 
 #include <kreedz_util>
+#include <kreedz_api>
 #include <settings_api>
 
 #define PLUGIN 	 	"[Kreedz] Menu"
@@ -14,7 +15,7 @@ enum OptionsEnum {
 new g_Options[OptionsEnum];
 
 enum UserDataStruct {
-	ud_mkeyBehavior,
+	ud_mkeyBehavior
 };
 
 new g_UserData[MAX_PLAYERS + 1][UserDataStruct];
@@ -70,13 +71,13 @@ public cmdMainMenu(id) {
 
 	new iMenu = menu_create(szMsg, "MainMenu_Handler");
 
-	formatex(szMsg, charsmax(szMsg), "%L", id, "MAINMENU_CP");
+	formatex(szMsg, charsmax(szMsg), "%L", id, "MAINMENU_CP", kz_get_cp_num(id));
 	menu_additem(iMenu, szMsg);
 
-	formatex(szMsg, charsmax(szMsg), "%L^n", id, "MAINMENU_TP");
+	formatex(szMsg, charsmax(szMsg), "%L^n", id, "MAINMENU_TP", kz_get_tp_num(id));
 	menu_additem(iMenu, szMsg);
 
-	formatex(szMsg, charsmax(szMsg), "%L^n", id, "MAINMENU_PAUSE");
+	formatex(szMsg, charsmax(szMsg), "%L^n", id, kz_get_timer_state(id) == TIMER_PAUSED ? "MAINMENU_UNPAUSE" : "MAINMENU_PAUSE");
 	menu_additem(iMenu, szMsg);
 
 	formatex(szMsg, charsmax(szMsg), "%L", id, "MAINMENU_START");

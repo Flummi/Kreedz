@@ -423,6 +423,8 @@ public native_set_pause() {
 	g_UserData[id][ud_TimerState] = TIMER_PAUSED;
 	g_UserData[id][ud_PauseTime] = get_gametime();
 
+	amxclient_cmd(id, "menu"); // refresh menu
+
 	cmd_Fade(id);
 
 	get_entvar(id, var_velocity, g_UserData[id][ud_LastVel]);
@@ -896,6 +898,8 @@ run_start(id) {
 
 	UpdateHud(id);
 	UTIL_TimerRoundtime(id, 0);
+
+	amxclient_cmd(id, "menu"); // refresh menu
 
 	ExecuteForward(g_Forwards[fwd_TimerStartPost], _, id);
 }
