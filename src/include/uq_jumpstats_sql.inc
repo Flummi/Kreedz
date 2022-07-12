@@ -24,10 +24,7 @@ public stats_sql()
 	}
 	
 	new CreateInto[1001];
-	
-	formatex(CreateInto, 1000, "CREATE TABLE IF NOT EXISTS uq_players (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,name VARCHAR(64) NOT NULL,ip VARCHAR(39) NOT NULL,authid VARCHAR(35) NOT NULL, lastseen INT(10) NOT NULL,INDEX(name,authid))");
-	SQL_ThreadQuery(DB_TUPLE,"QueryHandle", CreateInto);
-	
+
 	formatex(CreateInto, 1000, "CREATE TABLE IF NOT EXISTS uq_jumps (pid INT(11) NOT NULL,type VARCHAR(32) NOT NULL,distance INT(10) NOT NULL,maxspeed INT(10) NOT NULL,prestrafe INT(10) NOT NULL,strafes INT(2) NOT NULL,sync INT(3) NOT NULL,ddbh INT(3) NOT NULL DEFAULT '0',pspeed INT(3) NOT NULL,wpn VARCHAR(32) NOT NULL,INDEX(pid,type,distance,maxspeed,prestrafe,strafes,sync,ddbh,pspeed,wpn))");
 	SQL_ThreadQuery(DB_TUPLE,"QueryHandle", CreateInto);
 
@@ -103,11 +100,11 @@ public player_load_info(id)
 				get_user_authid(id, g_playersteam[id], 64);
 			}
 		
-			formatex(sql_rankby, 127, "authid LIKE '%s'", g_playersteam[id]);
+			formatex(sql_rankby, 127, "auth LIKE '%s'", g_playersteam[id]);
 		}
 	}
 	
-	query = SQL_PrepareQuery(SqlConnection, "SELECT `id` FROM uq_players WHERE %s", sql_rankby);
+	query = SQL_PrepareQuery(SqlConnection, "SELECT `id` FROM kz_uid WHERE %s", sql_rankby);
 	
 	if (!SQL_Execute(query))
 	{
@@ -117,14 +114,21 @@ public player_load_info(id)
 		SqlConnection = SQL_Connect(DB_TUPLE,tmp_error,g_error,511);
 		
 		set_task(2.0,"retrying_getinfo",213134+id);
-	} 
+	}
 	else if (!SQL_NumResults(query))
+	{
+		// wait for kz_sql_core
+		set_task(2.0,"retrying_getinfo",213134+id);
+	}
+	/*else if (!SQL_NumResults(query))
 	{
 		new cData[1];
 		cData[0] = id;
 		formatex(sql_query, 511, "INSERT INTO uq_players(name,ip,authid,lastseen) VALUES('%s','%s','%s',UNIX_TIMESTAMP())", quoted_name, g_playerip[id], g_playersteam[id]);
 		SQL_ThreadQuery(DB_TUPLE,"QueryHandle_newPlayer", sql_query, cData, strlen(cData[0]));
-	} else {
+	}*/
+	else
+	{
 		new cData[1];
 		cData[0] = id;
 		g_sql_pid[id] = SQL_ReadResult(query, 0);
@@ -138,12 +142,12 @@ public player_load_info(id)
 		format(sql_query, 511, "SELECT type,distance,jumpoff,block,pspeed,wpn FROM uq_block_tops_100aa WHERE pid=%d", g_sql_pid[id]);
 		SQL_ThreadQuery(DB_TUPLE,"QueryHandle_LoadPlayerTopsBlock100", sql_query, cData, strlen(cData[0]));
 		
-		if(get_pcvar_num(kz_uq_update_auth) <= 0)
+		/*if(get_pcvar_num(kz_uq_update_auth) <= 0)
 			format(sql_query, 511, "UPDATE uq_players SET lastseen=UNIX_TIMESTAMP() WHERE `id`=%d", g_sql_pid[id]);
 		else
 			format(sql_query, 511, "UPDATE uq_players SET name='%s',ip='%s',authid='%s',lastseen=UNIX_TIMESTAMP() WHERE `id`=%d", quoted_name, g_playerip[id], g_playersteam[id], g_sql_pid[id]);
 			
-		SQL_ThreadQuery(DB_TUPLE,"QueryHandle",sql_query);
+		SQL_ThreadQuery(DB_TUPLE,"QueryHandle",sql_query);*/
 	}
 	
 	return PLUGIN_CONTINUE;

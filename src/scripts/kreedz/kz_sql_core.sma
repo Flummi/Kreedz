@@ -112,8 +112,13 @@ initTables() {
 	formatex(szQuery, charsmax(szQuery), "\
 CREATE TABLE IF NOT EXISTS `kz_uid` (\
 	`id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,\
-	`steam_id` varchar(37) NOT NULL UNIQUE,\
-	`last_name` varchar(32) DEFAULT NULL\
+	`auth` varchar(37) NOT NULL UNIQUE,\
+	`name` varchar(32) DEFAULT NULL,\
+	`ip` varchar(39) DEFAULT NULL,\
+	`last_seen` DATETIME NULL DEFAULT NOW() ON UPDATE NOW(),\
+	`password` varchar(32) DEFAULT NULL,\
+	`access` varchar(32) DEFAULT NULL,\
+	`flags` varchar(32) DEFAULT NULL\
 	) DEFAULT CHARSET utf8;\
 \
 CREATE TABLE IF NOT EXISTS `kz_maps` (\
@@ -332,7 +337,7 @@ public client_putinserver(id) {
 	
 	// format query
 	formatex(szQuery, charsmax(szQuery), "\
-SELECT * FROM `kz_uid` WHERE `steam_id` = '%s';", 
+SELECT * FROM `kz_uid` WHERE `auth` = '%s';", 
 		szAuth);
 	
 	// async query to get user info
@@ -522,23 +527,24 @@ INSERT INTO `kz_maps` (`mapname`) VALUES ('%s');\
 	new id = str_to_num(szData);
 	new szQuery[512], szAuth[37];
 
-	new szName[MAX_NAME_LENGTH];
+	new szName[MAX_NAME_LENGTH], szUserIP[16];
 
 	get_user_name(id, szName, charsmax(szName));
 	get_user_authid(id, szAuth, charsmax(szAuth));
+	get_user_ip(id, szUserIP, charsmax(szUserIP), 1);
 	
 	// no results -> player connected for first time
 	if (SQL_NumResults(hQuery) <= 0) {
 		// format query
 		formatex(szQuery, charsmax(szQuery), "\
-INSERT INTO `kz_uid` (`steam_id`, `last_name`) VALUES ('%s', '%s');\
-			", szAuth, szName);
+INSERT INTO `kz_uid` (`auth`, `name`, `ip`) VALUES ('%s', '%s', '%s');\
+			", szAuth, szName, szUserIP);
 		
 		// async query to get user info again
 		SQL_ThreadQuery(SQL_Tuple, "@dummyHandler", szQuery);
 		
 		formatex(szQuery, charsmax(szQuery), "\
-SELECT * FROM `kz_uid` WHERE `steam_id` = '%s';\
+SELECT * FROM `kz_uid` WHERE `auth` = '%s';\
 			", szAuth);
 		
 		// async query to get user info
@@ -554,8 +560,8 @@ SELECT * FROM `kz_uid` WHERE `steam_id` = '%s';\
 		
 		// format query
 		formatex(szQuery, charsmax(szQuery), "\
-UPDATE `kz_uid` SET `last_name` = '%s' WHERE `id` = %d;\
-			", szName, g_UserData[id]);
+UPDATE `kz_uid` SET `name` = '%s', `ip` = '%s', `last_seen` = now() WHERE `id` = %d;\
+			", szName, szUserIP, g_UserData[id]);
 		
 		// async query to get user info again
 		SQL_ThreadQuery(SQL_Tuple, "@dummyHandler", szQuery);
@@ -625,13 +631,13 @@ INSERT INTO `kz_records` (`user_id`, `map_id`, `time`, `cp`, `tp`, `weapon`, `aa
 		g_ProRecords[id][ud_bestTime] = g_Candidates[id][run_time];
 		g_ProRecords[id][ud_cpCount] = g_Candidates[id][run_cpCount];
 		g_ProRecords[id][ud_tpCount] = g_Candidates[id][run_tpCount];
-		g_ProRecords[id][ud_hasRecord] = true;
+		g_ProRecords[id][ud_hasRecord] = g_Candidates[id][run_airaccelerate] == AIR_ACCELERATE_10;
 	}
 	else {
 		g_NubRecords[id][ud_bestTime] = g_Candidates[id][run_time];
 		g_NubRecords[id][ud_cpCount] = g_Candidates[id][run_cpCount];
 		g_NubRecords[id][ud_tpCount] = g_Candidates[id][run_tpCount];
-		g_NubRecords[id][ud_hasRecord] = true;
+		g_NubRecords[id][ud_hasRecord] = g_Candidates[id][run_airaccelerate] == AIR_ACCELERATE_10;
 	}
 
 	SQL_FreeHandle(hQuery);
@@ -713,7 +719,7 @@ INSERT INTO `kz_records` (`user_id`, `map_id`, `time`, `cp`, `tp`, `weapon`, `aa
 		new szWeaponName[32];
 		kz_get_weapon_name(g_Candidates[id][run_weapon], szWeaponName, charsmax(szWeaponName));
 
-		if (g_Candidates[id][run_tpCount] == 0) {
+		if (g_Candidates[id][run_tpCount] == 0 && g_Candidates[id][run_airaccelerate] == AIR_ACCELERATE_10) {
 			formatex(szTopType, charsmax(szTopType), "pro");
 		}
 		else {
