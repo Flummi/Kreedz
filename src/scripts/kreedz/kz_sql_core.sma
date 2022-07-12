@@ -1,6 +1,7 @@
 #include <amxmodx>
 #include <amxmisc>
 #include <cstrike>
+#include <fun>
 #include <sqlx>
 
 #include <kreedz_api>
@@ -302,6 +303,17 @@ public cmdShowPersonalBest(id) {
 			szTime, charsmax(szTime), true);
 
 		client_print_color(id , print_team_default, "%L", id, "KZ_CHAT_BEST_PRO", szTime);
+
+		// show time in scoreboard
+		new iMin, iSec, iMS;
+		UTIL_TimeToSec(g_ProRecords[id][ud_bestTime], iMin, iSec, iMS);
+		set_user_frags(id, iMin);
+		cs_set_user_deaths(id, iSec);
+		
+		message_begin(MSG_ALL, get_user_msgid("TeamInfo"));
+		write_byte(id);
+		write_string("CT");
+		message_end();
 	}
 	else if(g_NubRecords[id][ud_hasRecord]) {
 		UTIL_FormatTime(g_NubRecords[id][ud_bestTime],
@@ -631,13 +643,13 @@ INSERT INTO `kz_records` (`user_id`, `map_id`, `time`, `cp`, `tp`, `weapon`, `aa
 		g_ProRecords[id][ud_bestTime] = g_Candidates[id][run_time];
 		g_ProRecords[id][ud_cpCount] = g_Candidates[id][run_cpCount];
 		g_ProRecords[id][ud_tpCount] = g_Candidates[id][run_tpCount];
-		g_ProRecords[id][ud_hasRecord] = g_Candidates[id][run_airaccelerate] == AIR_ACCELERATE_10;
+		g_ProRecords[id][ud_hasRecord] = true;
 	}
 	else {
 		g_NubRecords[id][ud_bestTime] = g_Candidates[id][run_time];
 		g_NubRecords[id][ud_cpCount] = g_Candidates[id][run_cpCount];
 		g_NubRecords[id][ud_tpCount] = g_Candidates[id][run_tpCount];
-		g_NubRecords[id][ud_hasRecord] = g_Candidates[id][run_airaccelerate] == AIR_ACCELERATE_10;
+		g_NubRecords[id][ud_hasRecord] = true;
 	}
 
 	SQL_FreeHandle(hQuery);
@@ -719,7 +731,7 @@ INSERT INTO `kz_records` (`user_id`, `map_id`, `time`, `cp`, `tp`, `weapon`, `aa
 		new szWeaponName[32];
 		kz_get_weapon_name(g_Candidates[id][run_weapon], szWeaponName, charsmax(szWeaponName));
 
-		if (g_Candidates[id][run_tpCount] == 0 && g_Candidates[id][run_airaccelerate] == AIR_ACCELERATE_10) {
+		if (g_Candidates[id][run_tpCount] == 0) {
 			formatex(szTopType, charsmax(szTopType), "pro");
 		}
 		else {
