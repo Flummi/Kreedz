@@ -18,7 +18,7 @@ KZ_CHAT_NO_RECORD = ^4[KZ] ^1You haven't runs on this map.
 KZ_CHAT_REC_PRO = ^4[KZ] ^1Pro record: [^4%s^1] by ^3%s^1.
 KZ_CHAT_REC_NO_DATA = ^4[KZ] ^1Pro record: ^3No data^1.
 
-MAINMENU_TITLE = Menu
+MAINMENU_TITLE = \dPresent time %s^nMap \y%s\d & Timeleft \y%d:%02d\d
 MAINMENU_CP = Checkpoint (\y%d\w)
 MAINMENU_TP = Teleport (\y%d\w)
 MAINMENU_PAUSE = Pause

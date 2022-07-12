@@ -13,6 +13,7 @@ enum OptionsEnum {
 };
 
 new g_Options[OptionsEnum];
+new gMapname[64];
 
 enum UserDataStruct {
 	ud_mkeyBehavior
@@ -32,6 +33,8 @@ public plugin_init() {
 
 	register_dictionary("kreedz_lang.txt");
 	register_dictionary("common.txt");
+
+	get_mapname(gMapname, charsmax(gMapname));
 
 	bindOptions();
 }
@@ -67,7 +70,13 @@ public cmdMkeyHandler(id) {
 
 public cmdMainMenu(id) {
 	new szMsg[256];
-	formatex(szMsg, charsmax(szMsg), "%L", id, "MAINMENU_TITLE");
+	new CurrentTime[32];
+	new timeleft = get_timeleft();
+	new seconds = timeleft % 60;
+	new minutes = floatround((timeleft - seconds) / 60.0);
+	get_time("%d/%m/%Y - %H:%M:%S", CurrentTime, 31);
+
+	formatex(szMsg, charsmax(szMsg), "%L", id, "MAINMENU_TITLE", CurrentTime, gMapname, minutes, seconds);
 
 	new iMenu = menu_create(szMsg, "MainMenu_Handler");
 
