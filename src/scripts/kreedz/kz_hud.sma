@@ -1,7 +1,6 @@
 #include <amxmodx>
 #include <fakemeta>
 #include <reapi>
-#include <airaccelerate>
 
 #include <kreedz_api>
 #include <kreedz_util>
@@ -25,12 +24,14 @@ enum _:UserDataStruct {
 	bool:ud_showKeysSpec,
 	bool:ud_showSpecList,
 	bool:ud_hideAdminInSpecList,
+	ud_AirAccelerate,
 };
 
 new g_UserData[MAX_PLAYERS + 1][UserDataStruct];
 
 enum OptionsEnum {
     optBoolSpecList,
+	optIntAirAccelerate,
 };
 
 new g_Options[OptionsEnum];
@@ -59,11 +60,15 @@ public plugin_init() {
 
 bindOptions() {
 	g_Options[optBoolSpecList] = find_option_by_name("spec_list");
+	g_Options[optIntAirAccelerate] = find_option_by_name("airaccelerate");
 }
 
 public OnCellValueChanged(id, optionId, newValue) {
 	if (optionId == g_Options[optBoolSpecList]) {
 		g_UserData[id][ud_showSpecList] = _:newValue;
+	}
+	else if (optionId == g_Options[optIntAirAccelerate]) {
+		g_UserData[id][ud_AirAccelerate] = newValue;
 	}
 }
 
@@ -212,16 +217,22 @@ public Task_HudList() {
 FormatCheckpointsHud(id, szMsg[], iLen) {
 	new numChecks = kz_get_cp_num(id);
 	new numTeleports = kz_get_tp_num(id);
+	new AirAccelerate;
+
+	if(is_user_bot(id) || !g_UserData[id][ud_AirAccelerate])
+		AirAccelerate = 10;
+	else
+		AirAccelerate = g_UserData[id][ud_AirAccelerate];
 
 	switch (kz_get_timer_state(id)) {
 		case TIMER_DISABLED: {
-			formatex(szMsg, iLen, "^t^n(%daa)^n", get_user_airaccelerate(id));
+			formatex(szMsg, iLen, "^t^n(%daa)^n", AirAccelerate);
 		}
 		case TIMER_ENABLED: {
-			formatex(szMsg, iLen, "[%d cp %d gc]^n(%daa)^n", numChecks, numTeleports, get_user_airaccelerate(id));
+			formatex(szMsg, iLen, "[%d cp %d gc]^n(%daa)^n", numChecks, numTeleports, AirAccelerate);
 		}
 		case TIMER_PAUSED: {
-			formatex(szMsg, iLen, "[%d cp %d gc] | PAUSED^n(%daa)^n", numChecks, numTeleports, get_user_airaccelerate(id));
+			formatex(szMsg, iLen, "[%d cp %d gc] | PAUSED^n(%daa)^n", numChecks, numTeleports, AirAccelerate);
 		}
 	}
 }

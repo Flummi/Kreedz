@@ -364,7 +364,7 @@ public sql_check_reg(args[]) {
 			
 			g_sql_pid[id] = inserted_id;
 			num_to_str(inserted_id,tmp_str,11);
-			if(get_user_airaccelerate(id) == 10)
+			if(g_UserData[id][ud_AirAccelerate] == 10)
 				TrieSetCell(JumpPlayers, tmp_str, JumpData);
 			else
 				TrieSetCell(JumpPlayers_100aa, tmp_str, JumpData);
@@ -407,9 +407,9 @@ public PlayerSaveData_to_SQL(id, cData[]) {
 	formatex(type,32,"%s",Type_List[cData[6]]);
 	formatex(jt_str,64,"%s_%s_%d",tmp_str,Type_List[cData[6]],cData[7]);
 	
-	if(TrieKeyExists(get_user_airaccelerate(id) == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str)) // player is in trie
+	if(TrieKeyExists(g_UserData[id][ud_AirAccelerate] == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str)) // player is in trie
 	{
-		TrieGetCell(get_user_airaccelerate(id) == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JS);
+		TrieGetCell(g_UserData[id][ud_AirAccelerate] == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JS);
 		
 		if(TrieKeyExists(JS, "distance")) // get distance
 		{
@@ -417,7 +417,7 @@ public PlayerSaveData_to_SQL(id, cData[]) {
 			
 			if(distance < cData[0]) // jumpdist > old jumpdist, updating
 			{
-				formatex(query, 511, "UPDATE uq_jumps%s SET distance=%d,maxspeed=%d,prestrafe=%d,strafes=%d,sync=%d,ddbh=%d,pspeed=%d,wpn='%s' WHERE pid=%d AND type LIKE '%s' AND pspeed=%d", get_user_airaccelerate(id) == 100 ? "_100aa" : "", cData[0], cData[1], cData[2], cData[3], cData[4], cData[5], cData[7], wpn, g_sql_pid[id], type, cData[7]);
+				formatex(query, 511, "UPDATE uq_jumps%s SET distance=%d,maxspeed=%d,prestrafe=%d,strafes=%d,sync=%d,ddbh=%d,pspeed=%d,wpn='%s' WHERE pid=%d AND type LIKE '%s' AND pspeed=%d", g_UserData[id][ud_AirAccelerate] == 100 ? "_100aa" : "", cData[0], cData[1], cData[2], cData[3], cData[4], cData[5], cData[7], wpn, g_sql_pid[id], type, cData[7]);
 
 				SQL_ThreadQuery(DB_TUPLE,"QueryHandle", query);
 				TrieSetString(JS, "type", type);
@@ -430,7 +430,7 @@ public PlayerSaveData_to_SQL(id, cData[]) {
 				TrieSetCell(JS, "pspeed", cData[7]);
 				TrieSetString(JS, "wpn", wpn);
 				
-				TrieSetCell(get_user_airaccelerate(id) == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JS);
+				TrieSetCell(g_UserData[id][ud_AirAccelerate] == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JS);
 			}
 		}
 		else
@@ -440,7 +440,7 @@ public PlayerSaveData_to_SQL(id, cData[]) {
 	}
 	else // new jumptype to player, insert
 	{
-		formatex(query, 511, "INSERT INTO uq_jumps%s(pid,type,distance,maxspeed,prestrafe,strafes,sync,ddbh,pspeed,wpn) VALUES(%d,'%s',%d,%d,%d,%d,%d,%d,%d,'%s')", get_user_airaccelerate(id) == 100 ? "_100aa" : "", g_sql_pid[id], type, cData[0], cData[1], cData[2], cData[3], cData[4], cData[5], cData[7], wpn);
+		formatex(query, 511, "INSERT INTO uq_jumps%s(pid,type,distance,maxspeed,prestrafe,strafes,sync,ddbh,pspeed,wpn) VALUES(%d,'%s',%d,%d,%d,%d,%d,%d,%d,'%s')", g_UserData[id][ud_AirAccelerate] == 100 ? "_100aa" : "", g_sql_pid[id], type, cData[0], cData[1], cData[2], cData[3], cData[4], cData[5], cData[7], wpn);
 		
 		new Trie:JumpStat;
 		JumpStat = TrieCreate();
@@ -456,7 +456,7 @@ public PlayerSaveData_to_SQL(id, cData[]) {
 		TrieSetCell(JumpStat, "pspeed", cData[7]);
 		TrieSetString(JumpStat, "wpn", wpn);
 		
-		TrieSetCell(get_user_airaccelerate(id) == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JumpStat);
+		TrieSetCell(g_UserData[id][ud_AirAccelerate] == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JumpStat);
 	}
 }
 public PlayerSaveData_to_SQL_block(id, cData[]) {
@@ -482,9 +482,9 @@ public PlayerSaveData_to_SQL_block(id, cData[]) {
 	}
 	
 	
-	if(TrieKeyExists(get_user_airaccelerate(id) == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str)) // player is in trie
+	if(TrieKeyExists(g_UserData[id][ud_AirAccelerate] == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str)) // player is in trie
 	{
-		TrieGetCell(get_user_airaccelerate(id) == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JS);
+		TrieGetCell(g_UserData[id][ud_AirAccelerate] == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JS);
 			
 		if(TrieKeyExists(JS, "block")) // get block
 		{
@@ -499,7 +499,7 @@ public PlayerSaveData_to_SQL_block(id, cData[]) {
 					if((distance < cData[0] && block==cData[2]) || (block<cData[2])) // jumpdist > old jumpdist if block=oldblock or update if block<oldblock, updating
 					{
 						
-						formatex(query, 511, "UPDATE uq_block_tops%s SET distance=%d,jumpoff=%d,block=%d,pspeed=%d,wpn='%s' WHERE pid=%d AND type LIKE '%s' AND pspeed=%d", get_user_airaccelerate(id) == 100 ? "_100aa" : "", cData[0], cData[1], cData[2], cData[4], wpn, g_sql_pid[id], type, cData[4]);
+						formatex(query, 511, "UPDATE uq_block_tops%s SET distance=%d,jumpoff=%d,block=%d,pspeed=%d,wpn='%s' WHERE pid=%d AND type LIKE '%s' AND pspeed=%d", g_UserData[id][ud_AirAccelerate] == 100 ? "_100aa" : "", cData[0], cData[1], cData[2], cData[4], wpn, g_sql_pid[id], type, cData[4]);
 						
 						SQL_ThreadQuery(DB_TUPLE,"QueryHandle", query);
 						TrieSetString(JS, "type", type);
@@ -509,7 +509,7 @@ public PlayerSaveData_to_SQL_block(id, cData[]) {
 						TrieSetCell(JS, "pspeed", cData[4]);
 						TrieSetString(JS, "wpn", wpn);
 						
-						TrieSetCell(get_user_airaccelerate(id) == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JS);
+						TrieSetCell(g_UserData[id][ud_AirAccelerate] == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JS);
 					}
 				}
 				else
@@ -526,7 +526,7 @@ public PlayerSaveData_to_SQL_block(id, cData[]) {
 	else // new jumptype to player, insert
 	{
 		
-			formatex(query, 511, "INSERT INTO uq_block_tops%s(pid,type,distance,jumpoff,block,pspeed,wpn) VALUES(%d,'%s',%d,%d,%d,%d,'%s')", get_user_airaccelerate(id) == 100 ? "_100aa" : "", g_sql_pid[id], type, cData[0], cData[1], cData[2], cData[4], wpn);
+			formatex(query, 511, "INSERT INTO uq_block_tops%s(pid,type,distance,jumpoff,block,pspeed,wpn) VALUES(%d,'%s',%d,%d,%d,%d,'%s')", g_UserData[id][ud_AirAccelerate] == 100 ? "_100aa" : "", g_sql_pid[id], type, cData[0], cData[1], cData[2], cData[4], wpn);
 			
 			new Trie:JumpStat;
 			JumpStat = TrieCreate();
@@ -539,7 +539,7 @@ public PlayerSaveData_to_SQL_block(id, cData[]) {
 			TrieSetCell(JumpStat, "pspeed", cData[4]);
 			TrieSetString(JumpStat, "wpn", wpn);
 			
-			TrieSetCell(get_user_airaccelerate(id) == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JumpStat);
+			TrieSetCell(g_UserData[id][ud_AirAccelerate] == 10 ? JumpPlayers : JumpPlayers_100aa, jt_str, JumpStat);
 	}
 }
 /* AMXX-Studio Notes - DO NOT MODIFY BELOW HERE

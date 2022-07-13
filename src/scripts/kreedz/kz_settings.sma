@@ -4,7 +4,6 @@
 #include <kreedz_api>
 #include <kreedz_util>
 #include <settings_api>
-#include <airaccelerate>
 
 #define PLUGIN 			"[KZ] Settings"
 #define VERSION 		__DATE__
@@ -46,7 +45,7 @@ enum UserDataStruct {
     bool:ud_showMenu,
     bool:ud_allowGoto,
     bool:ud_specList,
-    ud_airaccelerate,
+    id_AirAccelerate,
 
     ud_mkeyBehavior,
     ud_jumpStats,
@@ -149,7 +148,7 @@ public plugin_precache() {
 
     // airaccelerate
     //
-    // default: 10(aa)
+    // default: sv_airaccelerate
     g_Options[optIntAiraccelerate] = register_players_option_cell("airaccelerate", FIELD_TYPE_INT, get_pcvar_num(get_cvar_pointer("sv_airaccelerate")));
 }
 
@@ -169,7 +168,7 @@ public client_putinserver(id) {
 
     g_UserData[id][ud_mkeyBehavior] = 0;
     g_UserData[id][ud_jumpStats] = DEFAULT_JUMP_STATS;
-    g_UserData[id][ud_airaccelerate] = get_pcvar_num(get_cvar_pointer("sv_airaccelerate"));
+    g_UserData[id][id_AirAccelerate] = get_pcvar_num(get_cvar_pointer("sv_airaccelerate"));
 
     remove_task(TASK_USER_INITIALIZED + id)
     set_task(5.0, "taskInitialized", TASK_USER_INITIALIZED + id);
@@ -225,16 +224,7 @@ public OnCellValueChanged(id, optionId, newValue) {
         g_UserData[id][ud_specList] = !!newValue;
     }
     else if (optionId == g_Options[optIntAiraccelerate]) {
-        client_print_color(id, print_team_default, "^4[KZ] ^1AirAccelerate: %d -> %d", get_user_airaccelerate(id), newValue);
-
-        g_UserData[id][ud_airaccelerate] = newValue;
-
-        if ((kz_get_timer_state(id) == TIMER_ENABLED || kz_get_timer_state(id) == TIMER_PAUSED) && get_user_airaccelerate(id) != newValue) {
-            kz_stop_timer(id);
-            client_print_color(id, print_team_default, "^4[KZ] ^1Timer resetted.");
-        }
-
-        set_user_airaccelerate(id, newValue);
+        g_UserData[id][id_AirAccelerate] = newValue;
     }
 }
 
@@ -290,7 +280,7 @@ stock settingsMenu(id, page = 0) {
     }
     menu_additem(iMenu, szMsg);
 
-    formatex(szMsg, charsmax(szMsg), "AirAccelerate: \y%daa", g_UserData[id][ud_airaccelerate]);
+    formatex(szMsg, charsmax(szMsg), "AirAccelerate: \y%daa", g_UserData[id][id_AirAccelerate]);
     menu_additem(iMenu, szMsg);
 
 
@@ -363,8 +353,18 @@ stock settingsMenu(id, page = 0) {
             set_option_cell(id, g_Options[optIntMkeyBehavior], g_UserData[id][ud_mkeyBehavior]);
         }
         case 11: {
-            g_UserData[id][ud_airaccelerate] = g_UserData[id][ud_airaccelerate] == 10 ? 100 : 10;
-            set_option_cell(id, g_Options[optIntAiraccelerate], g_UserData[id][ud_airaccelerate]);
+            if(!is_user_alive(id))
+		        return PLUGIN_HANDLED;
+                
+            new iOldAA = g_UserData[id][id_AirAccelerate]
+            g_UserData[id][id_AirAccelerate] = iOldAA == 10 ? 100 : 10;
+
+            if ((kz_get_timer_state(id) == TIMER_ENABLED || kz_get_timer_state(id) == TIMER_PAUSED) && iOldAA != g_UserData[id][id_AirAccelerate]) {
+                kz_stop_timer(id);
+                client_print_color(id, print_team_default, "^4[KZ] ^1Timer resetted.");
+            }
+
+            set_option_cell(id, g_Options[optIntAiraccelerate], g_UserData[id][id_AirAccelerate]);
         }
     }
 

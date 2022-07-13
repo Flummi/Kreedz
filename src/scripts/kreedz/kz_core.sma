@@ -10,8 +10,6 @@
 #include <kreedz_util>
 #include <settings_api>
 
-#include <airaccelerate>
-
 #define PLUGIN 	 	"[Kreedz] Core"
 #define VERSION 	__DATE__
 #define AUTHOR	 	"ggv"
@@ -35,6 +33,7 @@ enum _:UserDataStruct {
 	Float:ud_HookProtection,
 	bool:ud_isHookEnable,
 	ud_SteamId[37],
+	ud_AirAccelerate,
 
 	// Checks data
 	ud_AvailableStucks,
@@ -92,6 +91,7 @@ new g_Forwards[eForwards];
 
 enum OptionsEnum {
     optIntSaveAngles,
+	optIntAirAccelerate,
 };
 
 new g_Options[OptionsEnum];
@@ -207,11 +207,15 @@ initTries() {
 
 bindOptions() {
 	g_Options[optIntSaveAngles] = find_option_by_name("save_angles");
+	g_Options[optIntAirAccelerate] = find_option_by_name("airaccelerate");
 }
 
 public OnCellValueChanged(id, optionId, newValue) {
 	if (optionId == g_Options[optIntSaveAngles]) {
 		g_UserData[id][ud_AnglesMode] = newValue;
+	}
+	else if (optionId == g_Options[optIntAirAccelerate]) {
+		g_UserData[id][ud_AirAccelerate] = newValue;
 	}
 }
 
@@ -914,7 +918,7 @@ run_finish(id) {
 	runInfo[run_cpCount] = g_UserData[id][ud_ChecksNum];
 	runInfo[run_tpCount] = g_UserData[id][ud_TeleNum];
 	runInfo[run_weapon] = iWeaponRank;
-	runInfo[run_airaccelerate] = get_user_airaccelerate(id) == 10 ? AIR_ACCELERATE_10 : AIR_ACCELERATE_100;
+	runInfo[run_airaccelerate] = g_UserData[id][ud_AirAccelerate] == 10 ? AIR_ACCELERATE_10 : AIR_ACCELERATE_100;
 
 	new iRet;
 	ExecuteForward(g_Forwards[fwd_TimerFinishPre], iRet, id, PrepareArray(runInfo, RunStruct));

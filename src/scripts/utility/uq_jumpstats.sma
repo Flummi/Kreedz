@@ -20,7 +20,7 @@
 #include <uq_jumpstats_stocks>
 #include <celltrie>
 // #include <dhudmessage>
-#include <airaccelerate>
+
 #include <kreedz_api>
 #include <settings_api>
 
@@ -151,10 +151,17 @@ new const KZ_CVARSDIR[] = "config.cfg";
 
 enum OptionsEnum {
     optIntJumpStats,
+	optIntAirAccelerate,
 };
 
 new g_Options[OptionsEnum];
 new g_OptionFlags[MAX_PLAYERS + 1];
+
+enum _:UserDataStruct {
+	ud_AirAccelerate,
+};
+
+new g_UserData[MAX_PLAYERS + 1][UserDataStruct];
 
 public plugin_init()
 {
@@ -2223,7 +2230,7 @@ public fwdPreThink( id )
 					}
 				}
 				new aircj;
-				kz_airaccelerate = get_user_airaccelerate(id);
+				kz_airaccelerate = g_UserData[id][ud_AirAccelerate];
 				if(kz_airaccelerate<=10 && kz_airaccelerate!=1)
 				{
 					aircj=0;
@@ -9389,6 +9396,7 @@ public plugin_end()
 
 bindOptions() {
 	g_Options[optIntJumpStats] = find_option_by_name("jump_stats");
+	g_Options[optIntAirAccelerate] = find_option_by_name("airaccelerate");
 }
 
 public OnCellValueChanged(id, optionId, newValue) {
@@ -9416,5 +9424,8 @@ public OnCellValueChanged(id, optionId, newValue) {
 		if (speedon[id]) {
 			set_task(0.1, "DoSpeed", id+212299, "", 0, "b", 0);
 		}
+	}
+	else if (optionId == g_Options[optIntAirAccelerate]) {
+		g_UserData[id][ud_AirAccelerate] = newValue;
 	}
 }
