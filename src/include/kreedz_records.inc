@@ -9,6 +9,7 @@ enum _:RecordsStruct {
 	RecordsAuthor[32], // recordholder
 	Float:RecordsTime,
 	RecordsExtension[16], // additional info (map path)
+	RecordsSource[10]
 };
 
 native Array:kz_records_get_array();
