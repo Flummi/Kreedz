@@ -93,7 +93,7 @@ public cmdTop(id) {
 public cmdProTop(id) {
 	new szQuery[512];
 	formatex(szQuery, charsmax(szQuery), "\
-SELECT `last_name`, `time`, `cp`, `tp` FROM `kz_uid` as user INNER JOIN \
+SELECT `name`, `time`, `cp`, `tp` FROM `kz_uid` as user INNER JOIN \
 (SELECT * FROM `kz_records` \
 WHERE `map_id` = %d AND `aa` = 0 AND `weapon` = 6 AND `is_pro_record` = 1 ORDER BY `time` LIMIT 15) as record \
 ON user.id = record.user_id ORDER BY `time`;",
@@ -110,7 +110,7 @@ ON user.id = record.user_id ORDER BY `time`;",
 public cmdNubTop(id) {
 	new szQuery[512];
 	formatex(szQuery, charsmax(szQuery), "\
-SELECT `last_name`, `time`, `cp`, `tp` FROM `kz_uid` as user INNER JOIN \
+SELECT `name`, `time`, `cp`, `tp` FROM `kz_uid` as user INNER JOIN \
 (SELECT * FROM `kz_records` \
 WHERE `map_id` = %d AND `aa` = 0 AND `weapon` = 6 AND `is_pro_record` = 0 ORDER BY `time` LIMIT 15) as record \
 ON user.id = record.user_id ORDER BY `time`;",
@@ -165,7 +165,7 @@ public weaponTopMenu(id, bool:isProTop) {
 
 	new szQuery[512];
 	formatex(szQuery, charsmax(szQuery), "\
-SELECT `last_name`, `time`, `cp`, `tp` FROM `kz_uid` as user INNER JOIN \
+SELECT `name`, `time`, `cp`, `tp` FROM `kz_uid` as user INNER JOIN \
 (SELECT * FROM `kz_records` \
 WHERE `map_id` = %d AND `aa` = 0 AND `weapon` = %d AND `is_pro_record` = %d ORDER BY `time` LIMIT 15) as record \
 ON user.id = record.user_id ORDER BY `time`;",
@@ -182,7 +182,7 @@ ON user.id = record.user_id ORDER BY `time`;",
 public cmdProRecord(id) {
 	new szQuery[512];
 	formatex(szQuery, charsmax(szQuery), "\
-SELECT `last_name`, `time` FROM `kz_uid` as user INNER JOIN \
+SELECT `name`, `time` FROM `kz_uid` as user INNER JOIN \
 (SELECT * FROM `kz_records` WHERE `map_id` = %d AND `aa` = 0 AND `weapon` = 6 ORDER BY TIME LIMIT 1) as rec \
 ON user.id = rec.user_id;",
 		kz_sql_get_map_uid());
