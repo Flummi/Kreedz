@@ -329,7 +329,7 @@ public pid_in_name(mode,max_place,num,id,type[],pspeed,type_num,pid, distance, m
 		
 	}
 	
-	formatex(sql_query, 511, "SELECT name FROM uq_players WHERE id=%d",pid);
+	formatex(sql_query, 511, "SELECT name FROM kz_uid WHERE id=%d",pid);
 	SQL_ThreadQuery(DB_TUPLE1,"QueryHandle_pidName", sql_query, cData, 45);
 	
 }
@@ -769,7 +769,7 @@ public pid_in_name_block(mode,max_place,num,id,type[],pspeed,type_num,pid, dista
 		
 	}
 	
-	formatex(sql_query, 511, "SELECT name FROM uq_players WHERE id=%d",pid);
+	formatex(sql_query, 511, "SELECT name FROM kz_uid WHERE id=%d",pid);
 	SQL_ThreadQuery(DB_TUPLE1,"QueryHandle_pidName_block", sql_query, cData, 45);
 	
 }
