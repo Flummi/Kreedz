@@ -14,6 +14,8 @@
 
 new Handle:SQL_Tuple;
 
+new aamode[MAX_PLAYERS + 1];
+
 new const g_szTopCSS[] = "*{box-sizing:border-box;font-family:-apple-system,\
 BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,\
 Helvetica Neue,sans-serif}\
@@ -50,17 +52,34 @@ public cmdTop(id) {
 	formatex(szMsg, charsmax(szMsg), "Top");
 	new iMenu = menu_create(szMsg, "@topMenuHandler");
 
-	formatex(szMsg, charsmax(szMsg), "Pro top");
+	formatex(szMsg, charsmax(szMsg), "Pro top 10aa");
 	menu_additem(iMenu, szMsg, "1");
 
-	formatex(szMsg, charsmax(szMsg), "Nub top^n");
+	formatex(szMsg, charsmax(szMsg), "Pro top 100aa^n");
 	menu_additem(iMenu, szMsg, "2");
 
-	formatex(szMsg, charsmax(szMsg), "Weapon pro top");
+	formatex(szMsg, charsmax(szMsg), "Nub top 10aa");
 	menu_additem(iMenu, szMsg, "3");
 
-	formatex(szMsg, charsmax(szMsg), "Weapon nub top");
+	formatex(szMsg, charsmax(szMsg), "Nub top 100aa^n");
 	menu_additem(iMenu, szMsg, "4");
+
+	formatex(szMsg, charsmax(szMsg), "Weapon pro top 10aa");
+	menu_additem(iMenu, szMsg, "5");
+
+	formatex(szMsg, charsmax(szMsg), "Weapon pro top 100aa^n");
+	menu_additem(iMenu, szMsg, "6");
+
+	formatex(szMsg, charsmax(szMsg), "Weapon nub top 10aa");
+	menu_additem(iMenu, szMsg, "7");
+
+	formatex(szMsg, charsmax(szMsg), "Weapon nub top 100aa^n");
+	menu_additem(iMenu, szMsg, "8");
+
+	formatex(szMsg, charsmax(szMsg), "Exit");
+	menu_additem(iMenu, szMsg, "9");
+
+	menu_setprop(iMenu, MPROP_PERPAGE, 0);
 
 	menu_display(id, iMenu);
 
@@ -68,7 +87,7 @@ public cmdTop(id) {
 }
 
 @topMenuHandler(id, menu, item) {
-	if (item == MENU_EXIT) {
+	if (item == 0) {
 		menu_destroy(menu);
 		
 		return PLUGIN_HANDLED;
@@ -80,11 +99,17 @@ public cmdTop(id) {
 	
 	menu_destroy(menu);
 
+	aamode[id] = (iItem % 2 == 0) ? AIR_ACCELERATE_100 : AIR_ACCELERATE_10;
+
 	switch (iItem) {
 		case 1: cmdProTop(id);
-		case 2: cmdNubTop(id);
-		case 3: weaponTopMenu(id, true);
-		case 4: weaponTopMenu(id, false);
+		case 2: cmdProTop(id);
+		case 3: cmdNubTop(id);
+		case 4: cmdNubTop(id);
+		case 5: weaponTopMenu(id, true);
+		case 6: weaponTopMenu(id, true);
+		case 7: weaponTopMenu(id, false);
+		case 8: weaponTopMenu(id, false);
 	}
 
 	return PLUGIN_HANDLED;
@@ -95,9 +120,9 @@ public cmdProTop(id) {
 	formatex(szQuery, charsmax(szQuery), "\
 SELECT `name`, `time`, `cp`, `tp` FROM `kz_uid` as user INNER JOIN \
 (SELECT * FROM `kz_records` \
-WHERE `map_id` = %d AND `aa` = 0 AND `weapon` = 6 AND `is_pro_record` = 1 ORDER BY `time` LIMIT 15) as record \
+WHERE `map_id` = %d AND `aa` = %d AND `weapon` = 6 AND `is_pro_record` = 1 ORDER BY `time` LIMIT 15) as record \
 ON user.id = record.user_id ORDER BY `time`;",
-		kz_sql_get_map_uid());
+		kz_sql_get_map_uid(), aamode[id]);
 
 	new szData[32];
 	formatex(szData, charsmax(szData), "%d %d %d", id, true, WPN_USP);
@@ -112,9 +137,9 @@ public cmdNubTop(id) {
 	formatex(szQuery, charsmax(szQuery), "\
 SELECT `name`, `time`, `cp`, `tp` FROM `kz_uid` as user INNER JOIN \
 (SELECT * FROM `kz_records` \
-WHERE `map_id` = %d AND `aa` = 0 AND `weapon` = 6 AND `is_pro_record` = 0 ORDER BY `time` LIMIT 15) as record \
+WHERE `map_id` = %d AND `aa` = %d AND `weapon` = 6 AND `is_pro_record` = 0 ORDER BY `time` LIMIT 15) as record \
 ON user.id = record.user_id ORDER BY `time`;",
-		kz_sql_get_map_uid());
+		kz_sql_get_map_uid(), aamode[id]);
 
 	new szData[32];
 	formatex(szData, charsmax(szData), "%d %d %d", id, false, WPN_USP);
@@ -128,9 +153,9 @@ public weaponTopMenu(id, bool:isProTop) {
 	new szMsg[256];
 
 	if (isProTop)
-		formatex(szMsg, charsmax(szMsg), "Weapon Pro Top");
+		formatex(szMsg, charsmax(szMsg), "Weapon Pro Top %daa", aamode[id] == AIR_ACCELERATE_10 ? 10 : 100);
 	else
-		formatex(szMsg, charsmax(szMsg), "Weapon Nub Top");
+		formatex(szMsg, charsmax(szMsg), "Weapon Nub Top %daa", aamode[id] == AIR_ACCELERATE_10 ? 10 : 100);
 
 	new iMenu = menu_create(szMsg, "@weaponTopMenuHandler");
 
@@ -167,11 +192,11 @@ public weaponTopMenu(id, bool:isProTop) {
 	formatex(szQuery, charsmax(szQuery), "\
 SELECT `name`, `time`, `cp`, `tp` FROM `kz_uid` as user INNER JOIN \
 (SELECT * FROM `kz_records` \
-WHERE `map_id` = %d AND `aa` = 0 AND `weapon` = %d AND `is_pro_record` = %d ORDER BY `time` LIMIT 15) as record \
+WHERE `map_id` = %d AND `aa` = %d AND `weapon` = %d AND `is_pro_record` = %d ORDER BY `time` LIMIT 15) as record \
 ON user.id = record.user_id ORDER BY `time`;",
-		kz_sql_get_map_uid(), weapon, isProTop);
+		kz_sql_get_map_uid(), aamode[id], weapon, isProTop);
 
-	formatex(szData, charsmax(szData), "%d %d %d", id, isProTop, weapon);
+	formatex(szData, charsmax(szData), "%d %d %d %d", id, isProTop, weapon, aamode[id]);
 	SQL_ThreadQuery(SQL_Tuple, "@recordsTableHandler", szQuery, szData, charsmax(szData));
 
 	weaponTopMenu(id, isProTop);
@@ -211,8 +236,8 @@ ON user.id = rec.user_id;",
 		}
 	}
 
-	new szId[16], szIsPro[16], szWeapon[16];
-	parse(szData, szId, 15, szIsPro, 15, szWeapon, 15);
+	new szId[16], szIsPro[16], szWeapon[16], aa;
+	parse(szData, szId, 15, szIsPro, 15, szWeapon, 15, aa);
 
 	new id = str_to_num(szId);
 	new bool:isPro = bool:str_to_num(szIsPro);
@@ -223,7 +248,7 @@ ON user.id = rec.user_id;",
 		get_mapname(szMapName, charsmax(szMapName));
 
 		new szBuffer[4096], szAddString[256];
-		UTIL_GenerateHtmlHeader(szBuffer, charsmax(szBuffer), isPro, weapon);
+		UTIL_GenerateHtmlHeader(szBuffer, charsmax(szBuffer), isPro, weapon, aa);
 
 		new index = 1;
 		
@@ -329,16 +354,16 @@ ON user.id = rec.user_id;",
 *	------------------------------------------------------------------
 */
 
-stock UTIL_GenerateHtmlHeader(szBuffer[], len, bool:isPro, weapon = 6) {
+stock UTIL_GenerateHtmlHeader(szBuffer[], len, bool:isPro, weapon = 6, aa) {
 	new szWeaponName[32], szTitle[128], szMapName[64];
 
 	kz_get_weapon_name(weapon, szWeaponName, charsmax(szWeaponName));
 	get_mapname(szMapName, charsmax(szMapName));
 
 	if (isPro)
-		formatex(szTitle, charsmax(szTitle), "Pro records on %s (%s)", szMapName, szWeaponName);
+		formatex(szTitle, charsmax(szTitle), "Pro records (%daa) on %s (%s)", aa == AIR_ACCELERATE_10 ? 10 : 100, szMapName, szWeaponName);
 	else
-		formatex(szTitle, charsmax(szTitle), "Nub records on %s (%s)", szMapName, szWeaponName);
+		formatex(szTitle, charsmax(szTitle), "Nub records (%daa) on %s (%s)", aa == AIR_ACCELERATE_10 ? 10 : 100, szMapName, szWeaponName);
 	
 	formatex(szBuffer, len, "\
 <!DOCTYPE HTML PUBLIC ^"-//W3C//DTD HTML 4.01//EN^"\

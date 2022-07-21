@@ -50,11 +50,17 @@ public cmdTop(id) {
 	formatex(szMsg, charsmax(szMsg), "Top");
 	new iMenu = menu_create(szMsg, "TopMenu_Handler");
 	
-	formatex(szMsg, charsmax(szMsg), "Pro top");
+	formatex(szMsg, charsmax(szMsg), "Pro top 10aa");
 	menu_additem(iMenu, szMsg, "1", 0);
 
-	formatex(szMsg, charsmax(szMsg), "Nub top");
+	formatex(szMsg, charsmax(szMsg), "Pro top 100aa");
 	menu_additem(iMenu, szMsg, "2", 0);
+
+	formatex(szMsg, charsmax(szMsg), "Nub top 10aa");
+	menu_additem(iMenu, szMsg, "3", 0);
+
+	formatex(szMsg, charsmax(szMsg), "Nub top 100aa");
+	menu_additem(iMenu, szMsg, "4", 0);
 
 	menu_display(id, iMenu, 0);
 
@@ -75,19 +81,21 @@ public TopMenu_Handler(id, menu, item) {
 	menu_destroy(menu);
 
 	switch (iItem) {
-		case 1: cmdProTop(id);
-		case 2: cmdNubTop(id);
+		case 1: cmdProTop(id, AIR_ACCELERATE_10);
+		case 2: cmdProTop(id, AIR_ACCELERATE_100);
+		case 3: cmdNubTop(id, AIR_ACCELERATE_10);
+		case 4: cmdNubTop(id, AIR_ACCELERATE_100);
 	}
 
 	return PLUGIN_HANDLED;
 }
 
-public cmdProTop(id) {
+public cmdProTop(id, aa) {
 	new szMap[64], szUrl[256];
 	get_mapname(szMap, charsmax(szMap));
 
-	formatex(szUrl, charsmax(szUrl), "%s?type=pro&mapName=%s", 
-		g_szRecordsFrontendUrl, szMap);
+	formatex(szUrl, charsmax(szUrl), "%s?type=pro&mapName=%s&aa=%d", 
+		g_szRecordsFrontendUrl, szMap, aa);
 	
 	show_motd(id, szUrl, szMap);
 
@@ -95,12 +103,12 @@ public cmdProTop(id) {
 }
 
 
-public cmdNubTop(id) {
+public cmdNubTop(id, aa) {
 	new szMap[64], szUrl[256];
 	get_mapname(szMap, charsmax(szMap));
 
-	formatex(szUrl, charsmax(szUrl), "%s?type=nub&mapName=%s", 
-		g_szRecordsFrontendUrl, szMap);
+	formatex(szUrl, charsmax(szUrl), "%s?type=nub&mapName=%s&aa=%d", 
+		g_szRecordsFrontendUrl, szMap, aa);
 	
 	show_motd(id, szUrl, szMap);
 
