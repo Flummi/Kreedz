@@ -79,10 +79,13 @@ public cmd_Spec(id) {
 
 			if(iPlayer)
 			{
-				set_entvar(id, var_iuser1, 4);
+				//set_entvar(id, var_iuser1, 4);
 				set_entvar(id, var_iuser2, iPlayer);
 			}
 		}
+
+		set_entvar(id, var_iuser1, 4); // default first person eg spectating bots
+		client_cmd(id, ";specmode 4");
 
 		cs_set_user_team(id, CS_TEAM_SPECTATOR);
 
