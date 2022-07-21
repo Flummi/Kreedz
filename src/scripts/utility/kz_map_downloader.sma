@@ -136,7 +136,46 @@ public hook_Say(id) {
 	if (equal(szMsg, "") || szMsg[0] == 0x40) // '@'
 		return PLUGIN_HANDLED_MAIN;
 	
-	if (equali(szMsg, "/dl", 3)) {
+	if (equali(szMsg, "/dlrnd", 6)) {
+		if (!(get_user_flags(id) & KZMAPDL_LEVEL)) {
+			client_print(id, print_chat, "%s* You have no access to this command", g_szPrefix);
+			return PLUGIN_HANDLED;
+		}
+
+		new szMapFile[50] = "addons/amxmodx/data/kz_downloader/demoz.txt";
+		if (file_exists(szMapFile)) {
+			new txtsize, line = random_num(1, file_size(szMapFile, 1) - 2);
+			new tmp[64];
+			read_file(szMapFile, line, tmp, 63, txtsize);
+
+			new szBuffer[1][64];
+			explode_string(tmp, " ", szBuffer, 1, 64);
+
+			g_szDlMap = szBuffer[0];
+			
+			if (equali(g_szDlMap, g_szCurrentMap) || in_maps_array(g_szDlMap))
+				client_print(id, print_chat, "%s %s exists in maps folder", g_szPrefix, g_szDlMap);
+			else if (
+				g_State != State_NoTask && 
+				g_State != State_Finished && 
+				g_State != State_NotFound &&
+				g_State != State_Failed
+				) {
+				Show_DownloadMenu(id);
+			}
+			else if (!is_empty_str(g_szDlMap)) {
+				if (g_State == State_NoTask ||
+					g_State == State_Finished || 
+					g_State == State_NotFound ||
+					g_State == State_Failed) {
+						
+					g_State = State_NoTask;
+					Show_DownloadMenu(id);
+				}
+			}
+		}
+	}
+	else if (equali(szMsg, "/dl", 3)) {
 		if (!(get_user_flags(id) & KZMAPDL_LEVEL)) {
 			client_print( id, print_chat, "%s* You have no access to this command", g_szPrefix );
 			return PLUGIN_HANDLED;
