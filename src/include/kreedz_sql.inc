@@ -18,4 +18,13 @@ native kz_sql_get_user_uid(id);
 
 native kz_sql_get_map_uid();
 
+enum startposStruct {
+	Float:x,
+	Float:y,
+	Float:z,
+};
+native kz_sql_get_startpos(value[startposStruct]);
+
+native kz_sql_set_startpos(value[startposStruct]);
+
 native Handle:kz_sql_get_tuple();

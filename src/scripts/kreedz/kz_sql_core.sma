@@ -40,6 +40,9 @@ new Handle:SQL_Tuple;
 new Handle:SQL_Connection;
 
 new g_MapId;
+
+new g_startPos[startposStruct];
+
 new bool:g_HasMapProRecord[AirAccelerateEnum];
 
 enum _:UserRecordStruct {
@@ -124,7 +127,10 @@ CREATE TABLE IF NOT EXISTS `kz_uid` (\
 \
 CREATE TABLE IF NOT EXISTS `kz_maps` (\
 	`id` int(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,\
-	`mapname` varchar(64) NOT NULL UNIQUE\
+	`mapname` varchar(64) NOT NULL UNIQUE,\
+	`x` DECIMAl(17,6) NOT NULL,\
+	`y` DECIMAl(17,6) NOT NULL,\
+	`z` DECIMAl(17,6) NOT NULL\
 	) DEFAULT CHARSET utf8;\
 \
 CREATE TABLE IF NOT EXISTS `kz_records` (\
@@ -253,6 +259,8 @@ public plugin_natives() {
 	register_native("kz_sql_get_user_uid", "native_get_user_uid");
 	register_native("kz_sql_get_map_uid", "native_get_map_uid");
 	register_native("kz_sql_get_tuple", "native_get_tuple");
+	register_native("kz_sql_get_startpos", "native_get_startpos");
+	register_native("kz_sql_set_startpos", "native_set_startpos");
 	register_native("db_update_user_info", "native_db_update_user_info");
 	register_native("kz_has_map_pro_rec", "native_has_map_pro_rec");
 }
@@ -267,6 +275,26 @@ public native_get_user_uid() {
 
 public native_get_map_uid() {
 	return g_MapId;
+}
+
+public native_get_startpos() {
+	set_array(1, g_startPos, sizeof(g_startPos));
+}
+
+public native_set_startpos() {
+	new value[startposStruct];
+
+	get_array(1, value, sizeof(value));
+
+	g_startPos[x] = value[x];
+	g_startPos[y] = value[y];
+	g_startPos[z] = value[z];
+
+	new szQuery[512];
+	formatex(szQuery, charsmax(szQuery), "UPDATE `kz_maps` SET `x` = %f, `y` = %f, `z` = %f WHERE `id` = %d;",
+				g_startPos[x], g_startPos[y], g_startPos[z], g_MapId);
+
+	SQL_ThreadQuery(SQL_Tuple, "@dummyHandler", szQuery);
 }
 
 public native_db_update_user_info() {
@@ -496,7 +524,19 @@ INSERT INTO `kz_maps` (`mapname`) VALUES ('%s');\
 		initMap();
 	}
 	else {
+		new tx[13], ty[13], tz[13];
+
 		g_MapId = SQL_ReadResult(hQuery, 0);
+		SQL_ReadResult(hQuery, 2, tx, 12);
+		SQL_ReadResult(hQuery, 3, ty, 12);
+		SQL_ReadResult(hQuery, 4, tz, 12);
+		
+		g_startPos[x] = str_to_float(tx);
+		g_startPos[y] = str_to_float(ty);
+		g_startPos[z] = str_to_float(tz);
+
+		server_print("x: %f y: %f z: %f", g_startPos[x], g_startPos[y], g_startPos[z]);
+
 		initProRecords();
 	}
 

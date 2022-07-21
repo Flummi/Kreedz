@@ -8,6 +8,7 @@
 
 #include <kreedz_api>
 #include <kreedz_util>
+#include <kreedz_sql>
 #include <settings_api>
 
 #define PLUGIN 	 	"[Kreedz] Core"
@@ -634,7 +635,19 @@ public cmd_Start(id) {
 		set_entvar(id, var_flags, get_entvar(id, var_flags) | FL_DUCKING);
 		set_entvar(id, var_fuser2, 0.0);
 	} else {
-		ExecuteHamB(Ham_CS_RoundRespawn, id);
+		new startpos[startposStruct];
+		kz_sql_get_startpos(startpos);
+
+		if(startpos[x] == 0 && startpos[y] == 0 && startpos[z] == 0) {
+			ExecuteHamB(Ham_CS_RoundRespawn, id);
+		}
+		else {
+			set_entvar(id, var_origin, startpos);
+			set_entvar(id, var_velocity, Float:{0.0, 0.0, 0.0});
+			set_entvar(id, var_view_ofs, Float:{0.0, 0.0, 12.0});
+			set_entvar(id, var_flags, get_entvar(id, var_flags) | FL_DUCKING);
+			set_entvar(id, var_fuser2, 0.0);
+		}
 	}
 
 	ExecuteForward(g_Forwards[fwd_StartTeleportPost], _, id);
@@ -898,10 +911,27 @@ run_start(id) {
 	g_UserData[id][ud_StartPos][cp_Pos] = vPos;
 	g_UserData[id][ud_StartPos][cp_Angle] = vAngle;
 
+	// save pos
+	new startpos[startposStruct];
+	kz_sql_get_startpos(startpos);
+	if(startpos[x] == 0 && startpos[y] == 0 && startpos[z] == 0) {
+		// savepos
+		server_print("startposition saved");
+		new value[startposStruct];
+		value[x] = vPos[0];
+		value[y] = vPos[1];
+		value[z] = vPos[2];
+
+		kz_sql_set_startpos(value);
+	}
+
 	cmd_Fade(id);
 
 	UpdateHud(id);
 	UTIL_TimerRoundtime(id, 0);
+
+	set_hudmessage(200, 200, 200, -1.0, 0.8, 0, 3.0, 1.5, 0.0, 1.0);
+	show_hudmessage(id, "%L", id, "KZ_TIMER_STARTED");
 
 	amxclient_cmd(id, "menu"); // refresh menu
 

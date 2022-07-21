@@ -68,6 +68,8 @@ SETTINGSMENU_OPT_MKEY_SPEC_CT = M key behavior: \ygo to spec/ct
 SETTINGSMENU_ENABLE = enabled
 SETTINGSMENU_DISABLE = disabled
 
+KZ_TIMER_STARTED = The timer has started
+
 [ru]
 KZ_HUD_CANT_SAVE = Невозможно сохраниться в воздухе
 KZ_HUD_CANT_TELEPORT = У вас нет сохранений
